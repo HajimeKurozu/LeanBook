@@ -1,10 +1,10 @@
 name = "mil"
-defaultTargets = ["MIL"]
+defaultTargets = ["MIL", "LeanBook"] # デフォルトでビルドする対象に追加
 
 [leanOptions]
-pp.unicode.fun = true # pretty-prints `fun a ↦ b`
-autoImplicit = false
-relaxedAutoImplicit = false
+pp.unicode.fun = true
+#autoImplicit = false
+#relaxedAutoImplicit = false
 
 [[require]]
 name = "mathlib"
@@ -13,3 +13,14 @@ rev = "v4.21.0"
 
 [[lean_lib]]
 name = "MIL"
+srcDir = "mathematics_in_lean" # このフォルダ内のファイルを MIL モジュールとして扱う
+
+# 追加の設定：LeanBook フォルダ用
+[[lean_lib]]
+name = "LeanBook"
+# srcDir を指定しない場合、プロジェクトのルートにある LeanBook フォルダを探します
+# もし LeanBook/LeanBook.lean のような構成なら以下のように指定します
+# srcDir = "LeanBook"
+
+[[lean_lib]]
+name = "TPIL"
