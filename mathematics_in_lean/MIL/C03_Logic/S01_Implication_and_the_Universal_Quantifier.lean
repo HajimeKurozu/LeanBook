@@ -7,8 +7,14 @@ namespace C03S01
 
 #check ∀ x y ε : ℝ, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε
 
-theorem my_lemma : ∀ x y ε : ℝ, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε :=
-  sorry
+theorem my_lemma : ∀ x y ε : ℝ, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε := by
+  intro x y ε hε_pos hε_le1 hx hy
+  calc
+    |x * y| = |x| * |y| := abs_mul x y
+    _ < ε * ε           := mul_lt_mul'' hx hy (abs_nonneg x) (abs_nonneg y)
+    _ ≤ 1 * ε           := mul_le_mul_of_nonneg_right hε_le1 (le_of_lt hε_pos)
+    _ = ε               := one_mul ε
+
 
 section
 variable (a b δ : ℝ)
@@ -21,8 +27,14 @@ variable (ha : |a| < δ) (hb : |b| < δ)
 
 end
 
-theorem my_lemma2 : ∀ {x y ε : ℝ}, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε :=
-  sorry
+theorem my_lemma2 : ∀ {x y ε : ℝ}, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε := by
+  intro x y ε hε_pos hε_le_1 hx hy
+  calc
+    |x * y| = |x| * |y| := by rw [abs_mul]
+    _ < ε * ε           := mul_lt_mul'' hx hy (abs_nonneg x) (abs_nonneg y)
+    _ ≤ ε * 1           := mul_le_mul_of_nonneg_left hε_le_1 (le_of_lt hε_pos)
+    _ = ε               := mul_one ε
+
 
 section
 variable (a b δ : ℝ)
@@ -36,16 +48,22 @@ end
 theorem my_lemma3 :
     ∀ {x y ε : ℝ}, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε := by
   intro x y ε epos ele1 xlt ylt
-  sorry
+  calc
+    |x * y| = |x| * |y| := by rw [abs_mul]
+    _ < ε * ε           := mul_lt_mul'' xlt ylt (abs_nonneg x) (abs_nonneg y)
+    _ ≤ ε * 1           := mul_le_mul_of_nonneg_left ele1 (le_of_lt epos)
+    _ = ε               := mul_one ε
+
 
 theorem my_lemma4 :
     ∀ {x y ε : ℝ}, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε := by
   intro x y ε epos ele1 xlt ylt
   calc
-    |x * y| = |x| * |y| := sorry
-    _ ≤ |x| * ε := sorry
-    _ < 1 * ε := sorry
-    _ = ε := sorry
+    |x * y| = |x| * |y| := by apply abs_mul
+    _ ≤ |x| * ε := by apply mul_le_mul; linarith; linarith; apply abs_nonneg; apply abs_nonneg
+    _ < 1 * ε := by rw [mul_lt_mul_right epos]; linarith
+    _ = ε := by apply one_mul
+
 
 def FnUb (f : ℝ → ℝ) (a : ℝ) : Prop :=
   ∀ x, f x ≤ a
@@ -63,15 +81,26 @@ example (hfa : FnUb f a) (hgb : FnUb g b) : FnUb (fun x ↦ f x + g x) (a + b) :
   apply hfa
   apply hgb
 
-example (hfa : FnLb f a) (hgb : FnLb g b) : FnLb (fun x ↦ f x + g x) (a + b) :=
-  sorry
+example (hfa : FnLb f a) (hgb : FnLb g b) : FnLb (fun x ↦ f x + g x) (a + b) := by
+  intro x
+  apply add_le_add
+  apply hfa
+  apply hgb
 
-example (nnf : FnLb f 0) (nng : FnLb g 0) : FnLb (fun x ↦ f x * g x) 0 :=
-  sorry
+example (nnf : FnLb f 0) (nng : FnLb g 0) : FnLb (fun x ↦ f x * g x) 0 := by
+  intro x
+  apply mul_nonneg
+  apply nnf
+  apply nng
 
 example (hfa : FnUb f a) (hgb : FnUb g b) (nng : FnLb g 0) (nna : 0 ≤ a) :
-    FnUb (fun x ↦ f x * g x) (a * b) :=
-  sorry
+    FnUb (fun x ↦ f x * g x) (a * b) := by
+  intro x
+  apply mul_le_mul
+  apply hfa
+  apply hgb
+  apply nng
+  apply nna
 
 end
 
