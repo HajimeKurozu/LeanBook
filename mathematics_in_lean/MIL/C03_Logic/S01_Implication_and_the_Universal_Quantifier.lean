@@ -137,7 +137,6 @@ example {c : ℝ} (mf : Monotone f) (nnc : 0 ≤ c) : Monotone fun x ↦ c * f x
   mul_le_mul_of_nonneg_left
   (mf aleb) nnc
 
--- ↦ : \ma or \mapsto
 
 example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f (g x) := by
   intro a b aleb
@@ -186,8 +185,10 @@ example : s ⊆ s := by
 
 theorem Subset.refl : s ⊆ s := fun x xs ↦ xs
 
-theorem Subset.trans : r ⊆ s → s ⊆ t → r ⊆ t := by
-  sorry
+theorem Subset.trans : r ⊆ s → s ⊆ t → r ⊆ t :=
+  fun rsubs ssubt x xr ↦ ssubt
+  (rsubs xr)
+
 
 end
 
@@ -198,8 +199,9 @@ variable (s : Set α) (a b : α)
 def SetUb (s : Set α) (a : α) :=
   ∀ x, x ∈ s → x ≤ a
 
-example (h : SetUb s a) (h' : a ≤ b) : SetUb s b :=
-  sorry
+example (h : SetUb s a) (h' : a ≤ b) : SetUb s b := by
+  intro x xs
+  apply le_trans (h x xs) h'
 
 end
 
@@ -212,12 +214,27 @@ example (c : ℝ) : Injective fun x ↦ x + c := by
   exact (add_left_inj c).mp h'
 
 example {c : ℝ} (h : c ≠ 0) : Injective fun x ↦ c * x := by
-  sorry
+  intro x₁ x₂ h'
+  apply (mul_right_inj' h).mp h'
 
 variable {α : Type*} {β : Type*} {γ : Type*}
 variable {g : β → γ} {f : α → β}
 
 example (injg : Injective g) (injf : Injective f) : Injective fun x ↦ g (f x) := by
-  sorry
+  intro x₁ x₂ h
+  apply injf
+  apply injg
+  apply h
 
 end
+
+
+/-
+↦ : \ma or \mapsto,
+∈ : \in,
+∉ : \inn,
+⊆ : \subset,
+⊂ : \ssub,
+⊄ : \ssubn,
+⊊ : \subsetneqq
+-/
