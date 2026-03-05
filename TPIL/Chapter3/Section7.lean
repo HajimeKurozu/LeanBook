@@ -270,11 +270,77 @@ example (p q : Prop) : p ∧ ¬q → ¬(p → q) :=
       -- 5. 得られた q を hnq に渡して矛盾(False)を導く
       show False from hnq hq
 
-example : ¬p → (p → q) := sorry
-example : (¬p ∨ q) → (p → q) := sorry
-example : p ∨ False ↔ p := sorry
-example : p ∧ False ↔ False := sorry
-example : (p → q) → (¬q → ¬p) := sorry
+example (p q : Prop) : ¬p → (p → q) :=
+  -- 1. 仮定 hnp : ¬p (つまり p → False) を受け取る
+  fun hnp : ¬p =>
+    -- 2. 次に 仮定 hp : p を受け取る
+    fun hp : p =>
+      -- 3. hnp に hp を渡すと、矛盾 (False) が得られる
+      have hf : False := hnp hp
+      -- 4. 矛盾が起きたので、そこから望みの命題 q を導き出す
+      show q from False.elim hf
+
+example (p q : Prop) : (¬p ∨ q) → (p → q) :=
+  -- 1. 仮定 h : ¬p ∨ q を受け取る
+  fun h : ¬p ∨ q =>
+    -- 2. 結論 (p → q) を導くため、仮定 hp : p を受け取る
+    fun hp : p =>
+      -- 3. 手元にある h (¬p ∨ q) を場合分けする
+      Or.elim h
+        (fun hnp : ¬p =>
+          -- ケースA: ¬p (p → False) の場合
+          -- p と ¬p で矛盾が発生するので、False.elim で q を導く
+          have hf : False := hnp hp
+          show q from False.elim hf)
+        (fun hq : q =>
+          -- ケースB: q の場合
+          -- すでに q そのものを持っているので、そのまま show する
+          show q from hq)
+
+example (p : Prop) : p ∨ False ↔ p :=
+  Iff.intro
+    (fun h : p ∨ False =>
+      -- 左から右への証明 (→)
+      -- 1. p ∨ False を場合分けします
+      Or.elim h
+        (fun hp : p =>
+          -- ケースA: p が真の場合、そのまま p を返す
+          show p from hp)
+        (fun hf : False =>
+          -- ケースB: False が真（！？）という仮定の場合
+          -- 矛盾が起きているので、False.elim を使って p を導く
+          show p from False.elim hf))
+    (fun hp : p =>
+      -- 右から左への証明 (←)
+      -- p が真なら、p ∨ False の左側 (inl) を採用すればよい
+      show p ∨ False from Or.inl hp)
+
+
+example (p : Prop) : p ∧ False ↔ False :=
+  Iff.intro
+    (fun h : p ∧ False =>
+      -- 左から右への証明 (→)
+      -- h (p ∧ False) の右側を取り出せば、そのまま False が得られる
+      show False from h.right)
+    (fun hf : False =>
+      -- 右から左への証明 (←)
+      -- False（矛盾）からは何でも導ける（False.elim）
+      have hp : p := False.elim hf
+      show p ∧ False from ⟨hp, hf⟩)
+
+
+example (p q : Prop) : (p → q) → (¬q → ¬p) :=
+  -- 1. 仮定 h : p → q を受け取る
+  fun h : p → q =>
+    -- 2. 結論 ¬q → ¬p を証明するため、仮定 hnq : ¬q を受け取る
+    fun hnq : ¬q =>
+      -- 3. さらに ¬p (p → False) を証明するため、仮定 hp : p を受け取る
+      fun hp : p =>
+        -- 4. h に hp を渡すと q が得られる
+        have hq : q := h hp
+        -- 5. hnq (q → False) に hq を渡すと矛盾 (False) が得られる
+        show False from hnq hq
+
 
 /-
 以下の識別子を証明し、sorryプレースホルダーを実際の証明に置き換えてください。
@@ -285,7 +351,32 @@ open Classical
 
 variable (p q r : Prop)
 
-example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := sorry
+example : (p → q ∨ r) → ((p → q) ∨ (p → r)) :=
+-- 1. 仮定 h : p → q ∨ r を受け取る
+  fun h : p → q ∨ r =>
+    -- 2. 排中律を p に適用して場合分けする
+    Or.elim (em p)
+      (fun hp : p =>
+        -- ケースA: p が真の場合
+        -- h に hp を渡すと (q ∨ r) が得られるので、これをさらに分解する
+        have hqr : q ∨ r := h hp
+        Or.elim hqr
+          (fun hq : q =>
+            -- q が真なら、(p → q) が作れる
+            have hpq : p → q := fun _ => hq
+            Or.inl hpq)
+          (fun hr : r =>
+            -- r が真なら、(p → r) が作れる
+            have hpr : p → r := fun _ => hr
+            Or.inr hpr))
+      (fun hnp : ¬p =>
+        -- ケースB: p が偽 (¬p) の場合
+        -- p が偽なら「爆発原理」により (p → q) は自動的に真になる
+        have hpq : p → q :=
+          fun hp_absurd : p =>
+            False.elim (hnp hp_absurd)
+        Or.inl hpq)
+
 example : ¬(p ∧ q) → ¬p ∨ ¬q := sorry
 example : ¬(p → q) → p ∧ ¬q := sorry
 example : (p → q) → (¬p ∨ q) := sorry
@@ -297,4 +388,21 @@ example : (((p → q) → p) → p) := sorry
 古典論理を使用せずに ¬(p ↔ ¬p) を証明してください。
 -/
 
-example : ¬(p ↔ ¬p) := sorry
+example (p : Prop) : ¬(p ↔ ¬p) :=
+  -- 1. (p ↔ ¬p) を仮定して矛盾 (False) を導く
+  fun h : p ↔ ¬p =>
+    -- 2. 二つの向きの関数を取り出す
+    have hp_to_hnp : p → ¬p := h.mp
+    have hnp_to_hp : ¬p → p := h.mpr
+
+    -- 3. 「¬p」そのものを証明できてしまう
+    have hnp : ¬p :=
+      fun hp : p =>
+        -- p があるなら、hp_to_hnp を使って ¬p を作り、hp とぶつけて矛盾させる
+        show False from (hp_to_hnp hp) hp
+
+    -- 4. 「p」そのものも証明できてしまう
+    have hp : p := hnp_to_hp hnp
+
+    -- 5. ついに p と ¬p が揃ったので矛盾！
+    show False from hnp hp
