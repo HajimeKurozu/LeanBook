@@ -377,18 +377,124 @@ example : (p → q ∨ r) → ((p → q) ∨ (p → r)) :=
             False.elim (hnp hp_absurd)
         Or.inl hpq)
 
-example : ¬(p ∧ q) → ¬p ∨ ¬q := sorry
-example : ¬(p → q) → p ∧ ¬q := sorry
-example : (p → q) → (¬p ∨ q) := sorry
-example : (¬q → ¬p) → (p → q) := sorry
-example : p ∨ ¬p := sorry
-example : (((p → q) → p) → p) := sorry
+
+example : ¬(p ∧ q) → ¬p ∨ ¬q :=
+  -- 1. 仮定 h : ¬(p ∧ q) を受け取る
+  fun h : ¬(p ∧ q) =>
+    -- 2. p について排中律を適用し、宇宙を「p か ¬p か」で分ける
+    Or.elim (em p)
+      (fun hp : p =>
+        -- ケースA: p が真の場合
+        -- もし p が真なら、全体の否定 h が成り立つためには q が偽である必要がある
+        have hnq : ¬q :=
+          fun hq : q =>
+            -- p と q が揃ってしまうので、前提 h と矛盾する
+            show False from h ⟨hp, hq⟩
+        -- q が偽だと分かったので、結論の右側 (Or.inr) を選ぶ
+        show ¬p ∨ ¬q from Or.inr hnq)
+      (fun hnp : ¬p =>
+        -- ケースB: p が偽 (¬p) の場合
+        -- すでに ¬p を持っているので、結論の左側 (Or.inl) を選ぶ
+        show ¬p ∨ ¬q from Or.inl hnp)
+
+
+example : ¬(p → q) → p ∧ ¬q :=
+  -- 1. 仮定 h : ¬(p → q) を受け取る
+  fun h : ¬(p → q) =>
+    -- 2. p について排中律を適用する
+    Or.elim (em p)
+      (fun hp : p =>
+        -- ケースA: p が真の場合
+        -- あとは ¬q を導けばよい
+        have hnq : ¬q :=
+          fun hq : q =>
+            -- hp と hq があれば (p → q) が作れてしまい、h と矛盾する
+            have hpq : p → q := fun _ => hq
+            show False from h hpq
+        -- p と ¬q を組み合わせて結論を作る
+        show p ∧ ¬q from ⟨hp, hnq⟩)
+      (fun hnp : ¬p =>
+        -- ケースB: p が偽 (¬p) の場合
+        -- 実はここでも矛盾が起きる。なぜなら ¬p ならば (p → q) は真になるから。
+        have hpq : p → q :=
+          fun hp : p =>
+            -- p と ¬p で矛盾が発生するので、爆発原理で q を出す
+            False.elim (hnp hp)
+        -- これが前提 h : ¬(p → q) と矛盾する
+        False.elim (h hpq))
+
+
+example : (p → q) → (¬p ∨ q) :=
+  -- 1. 仮定 h : p → q を受け取る
+  fun h : p → q =>
+    -- 2. p について排中律を適用する（p か ¬p か）
+    Or.elim (em p)
+      (fun hp : p =>
+        -- ケースA: p が真の場合
+        -- h に hp を渡すと q が得られる
+        have hq : q := h hp
+        -- q が手に入ったので、右側のルート (Or.inr) を選ぶ
+        show ¬p ∨ q from Or.inr hq)
+      (fun hnp : ¬p =>
+        -- ケースB: p が偽 (¬p) の場合
+        -- すでに ¬p を持っているので、左側のルート (Or.inl) を選ぶ
+        show ¬p ∨ q from Or.inl hnp)
+
+
+example : (¬q → ¬p) → (p → q) :=
+  -- 1. 仮定 h : ¬q → ¬p を受け取る
+  fun h : ¬q → ¬p =>
+    -- 2. 結論 (p → q) を導くため、仮定 hp : p を受け取る
+    fun hp : p =>
+      -- 3. ここで排中律 (em q) を使い、q か ¬q かで場合分けする
+      Or.elim (em q)
+        (fun hq : q =>
+          -- ケースA: q が真の場合
+          -- すでに q があるので、そのまま結論として出す
+          show q from hq)
+        (fun hnq : ¬q =>
+          -- ケースB: q が偽 (¬q) の場合
+          -- h に hnq を渡すと ¬p (p → False) が得られる
+          have hnp : ¬p := h hnq
+          -- これに hp を渡すと矛盾 (False) が発生する
+          have hf : False := hnp hp
+          -- 矛盾が起きたので、爆発原理で q を導く
+          show q from False.elim hf)
+
+
+example : p ∨ ¬p :=
+  -- Classical ライブラリに定義されている em (Excluded Middle) を呼び出すだけです
+  show p ∨ ¬p from em p
+
+
+example : ((p → q) → p) → p :=
+  -- 1. 仮定 f : (p → q) → p を受け取る
+  fun f : (p → q) → p =>
+    -- 2. p について排中律を適用する
+    Or.elim (em p)
+      (fun hp : p =>
+        -- ケースA: p が真の場合
+        -- すでに p があるので、そのまま結論として出す
+        show p from hp)
+      (fun hnp : ¬p =>
+        -- ケースB: p が偽 (¬p) の場合
+        -- ここで「p が偽なら、(p → q) は真になる」という性質を使い、
+        -- 仮定 f から p を引きずり出す
+        have hpq : p → q :=
+          fun hp_absurd : p =>
+            -- p と ¬p で矛盾が発生
+            False.elim (hnp hp_absurd)
+        -- f に hpq を適用すると p が得られる
+        have hp : p := f hpq
+        -- しかし、今はこの世界は「¬p」であると仮定しているので、ここで矛盾！
+        show p from False.elim (hnp hp))
+
 
 /-
 古典論理を使用せずに ¬(p ↔ ¬p) を証明してください。
 -/
 
-example (p : Prop) : ¬(p ↔ ¬p) :=
+example : ¬(p ↔ ¬p) :=
   -- 1. (p ↔ ¬p) を仮定して矛盾 (False) を導く
   fun h : p ↔ ¬p =>
     -- 2. 二つの向きの関数を取り出す
